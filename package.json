@@ -7,12 +7,14 @@
   "bin": {
     "tweets2character": "scripts/tweets2character.js",
     "folder2knowledge": "scripts/folder2knowledge.js",
-    "knowledge2character": "scripts/knowledge2character.js"
+    "knowledge2character": "scripts/knowledge2character.js",
+    "web2folder": "scripts/web2folder.js"
   },
   "scripts": {
     "tweets2character": "node scripts/tweets2character.js",
     "folder2knowledge": "node scripts/folder2knowledge.js",
     "knowledge2character": "node scripts/knowledge2character.js",
+    "web2folder": "node scripts/web2folder.js",
     "example": "node examples/example.mjs",
     "validate": "node examples/validate.mjs"
   },
@@ -28,6 +30,8 @@
     "node-fetch": "^3.3.2",
     "node-llama-cpp": "^3.0.0-beta.44",
     "node-stream-zip": "^1.15.0",
+    "pdfjs-dist": "2.x",
+    "sanitize-filename": "^1.6.3",
     "systeminformation": "^5.23.5",
     "tiktoken": "^1.0.16"
   },
