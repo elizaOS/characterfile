@@ -99,27 +99,24 @@ const findAndProcessFiles = async (dirPath) => {
       withFileTypes: true,
     });
 
-    const documents = [];
-    const chunks = [];
+    const contents = [];
 
     for (const dirent of filesAndDirectories) {
       const fullPath = path.join(dirPath, dirent.name);
 
       if (dirent.isDirectory()) {
-        const { docs, chks } = await findAndProcessFiles(fullPath);
-        documents.push(...docs);
-        chunks.push(...chks);
+        const _contents = await findAndProcessFiles(fullPath);
+        contents.push(..._contents);
       } else if (dirent.isFile()) {
-        const { document, chunks: fileChunks } = await processDocument(fullPath);
-        documents.push(document);
-        chunks.push(...fileChunks);
+        const content = await processDocument(fullPath);
+        contents.push(content);
       }
     }
 
-    return { docs: documents, chks: chunks };
+    return contents;
   } catch (error) {
     console.error(`Error processing directory ${dirPath}: ${error}`);
-    return { docs: [], chks: [] };
+    return [];
   }
 };
 
@@ -156,15 +153,10 @@ const main = async () => {
     }
 
     console.log(`Searching for files in: ${path}`);
-    const { docs, chks } = await findAndProcessFiles(path);
-
-    const output = {
-      documents: docs,
-      chunks: chks
-    };
+    const contents = await findAndProcessFiles(path);
 
     // Save the output to knowledge.json
-    await fs.writeFile('knowledge.json', JSON.stringify(output, null, 2));
+    await fs.writeFile('knowledge.json', JSON.stringify(contents, null, 2));
 
     console.log('Done processing files and saved memories to knowledge.json.');
   } catch (error) {
