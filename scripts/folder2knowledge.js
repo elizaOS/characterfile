@@ -75,6 +75,27 @@ const getApiKey = async () => {
   }
 };
 
+// Add this function to handle text chunking
+const chunkText = (text, maxChunkSize = 1000) => {
+  const chunks = [];
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  let currentChunk = '';
+
+  for (const sentence of sentences) {
+    if ((currentChunk + sentence).length > maxChunkSize && currentChunk.length > 0) {
+      chunks.push(currentChunk.trim());
+      currentChunk = '';
+    }
+    currentChunk += (currentChunk ? ' ' : '') + sentence;
+  }
+
+  if (currentChunk.trim()) {
+    chunks.push(currentChunk.trim());
+  }
+
+  return chunks;
+};
+
 const processDocument = async (filePath) => {
   console.log(`Processing file: ${filePath}`);
 
@@ -89,7 +110,13 @@ const processDocument = async (filePath) => {
     content = await fs.readFile(filePath, 'utf8');
   }
   
-  return content;
+  // Create chunks from the content
+  const chunks = chunkText(content);
+  
+  return {
+    document: content,
+    chunks: chunks
+  };
 };
 
 // Asynchronous function to recursively find files and process them
@@ -103,6 +130,9 @@ const findAndProcessFiles = async (dirPath) => {
     const chunks = [];
 
     for (const dirent of filesAndDirectories) {
+      // Skip .DS_Store files
+      if (dirent.name === '.DS_Store') continue;
+      
       const fullPath = path.join(dirPath, dirent.name);
 
       if (dirent.isDirectory()) {
