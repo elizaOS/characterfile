@@ -43,7 +43,7 @@ Read the example character file and validate it against the JSON schema
 
 # Scripts
 
-You can use the scripts the generate a character file from your tweets, convert a folder of documents into a knowledge file, and add knowledge to your character file.
+You can use the scripts to generate a character file from your tweets, convert a folder of documents into a knowledge file, and add knowledge to your character file.
 
 Most of these scripts require an OpenAI or Anthropic API key.
 
