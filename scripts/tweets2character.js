@@ -125,6 +125,35 @@ const runChatCompletion = async (messages, useGrammar = false, model) => {
     const parsed = parseJsonFromMarkdown(content) || JSON.parse(content);
     return parsed;
   }
+  else if (model === 'openrouter') {
+    const modelName = 'deepseek/deepseek-r1';
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: modelName,
+        messages: messages,
+      }),
+    });
+
+    // check for 429
+    if (response.status === 429) {
+      await new Promise(resolve => setTimeout(resolve, 30000));
+      return runChatCompletion(messages, useGrammar, model);
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content.trim();
+    const parsed = parseJsonFromMarkdown(content) || JSON.parse(content);
+    return parsed;
+  }
 };
 
 
@@ -407,6 +436,7 @@ process.on('unhandledRejection', (reason, promise) => {
 program
   .option('--openai <api_key>', 'OpenAI API key')
   .option('--claude <api_key>', 'Claude API key')
+  .option('--openrouter <api_key>', 'OpenRouter API key')
   .parse(process.argv);
 
 const limitConcurrency = async (tasks, concurrencyLimit) => {
@@ -472,6 +502,8 @@ const validateApiKey = (apiKey, model) => {
     return apiKey.trim().startsWith('sk-');
   } else if (model === 'claude') {
     return apiKey.trim().length > 0;
+  } else if (model === 'openrouter') {
+    return apiKey.trim().startsWith('sk-');
   }
   return false;
 };
@@ -494,7 +526,7 @@ const resumeOrStartNewSession = async (projectCache, archivePath) => {
   }
   
   if (!projectCache.unfinishedSession) {
-    projectCache.model = await promptUser('Select model (openai/claude): ');
+    projectCache.model = await promptUser('Select model (openai/claude/openrouter): ');
     projectCache.basicUserInfo = await promptUser('Enter additional user info that might help the summarizer (real name, nicknames and handles, age, past employment vs current, etc): ');
     projectCache.unfinishedSession = {
       currentChunk: 0,
