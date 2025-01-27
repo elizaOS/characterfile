@@ -7,12 +7,14 @@
   "bin": {
     "tweets2character": "scripts/tweets2character.js",
     "folder2knowledge": "scripts/folder2knowledge.js",
-    "knowledge2character": "scripts/knowledge2character.js"
+    "knowledge2character": "scripts/knowledge2character.js",
+    "chats2character": "scripts/chats2character.js"
   },
   "scripts": {
     "tweets2character": "node scripts/tweets2character.js",
     "folder2knowledge": "node scripts/folder2knowledge.js",
     "knowledge2character": "node scripts/knowledge2character.js",
+    "chats2character": "node scripts/chats2character.js",
     "example": "node examples/example.mjs",
     "validate": "node examples/validate.mjs"
   },
@@ -23,11 +25,13 @@
     "@opendocsg/pdf2md": "^0.1.31",
     "adm-zip": "^0.5.16",
     "cli-progress": "^3.12.0",
+    "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",
     "inquirer": "^10.2.2",
     "node-fetch": "^3.3.2",
     "node-llama-cpp": "^3.0.0-beta.44",
     "node-stream-zip": "^1.15.0",
+    "openai": "^4.79.1",
     "systeminformation": "^5.23.5",
     "tiktoken": "^1.0.16"
   },
