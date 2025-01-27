@@ -104,6 +104,66 @@ node scripts/knowledge2character.js path/to/character.character path/to/knowledg
 
 Note that the arguments are optional and will be prompted for if not provided.
 
+## Chat Export Processing
+
+Process WhatsApp chat exports to create character profiles.
+
+You can run chats2character directly from your command line with no downloads:
+
+npx chats2character -f path/to/chat.txt -u "Username"
+npx chats2character -d path/to/chats/dir -u "John Doe"
+
+Or if you have cloned the repo:
+
+npm install
+node scripts/chats2character.js -f path/to/chat.txt -u "Username"
+node scripts/chats2character.js -d path/to/chats/dir -u "John Doe"
+
+Options:
+-u, --user           Target username as it appears in chats (use quotes for names with spaces)
+-f, --file           Path to single chat export file
+-d, --dir            Path to directory containing chat files
+-i, --info           Path to JSON file containing additional user information
+-l, --list           List all users found in chats
+--openai [api_key]   Use OpenAI model (optionally provide API key)
+--claude [api_key]   Use Claude model (default, optionally provide API key)
+
+Examples:
+# Provide API key directly:
+npx chats2character -d whatsapp/chats --openai sk-...
+npx chats2character -d whatsapp/chats --claude sk-...
+
+# Use stored/cached API key:
+npx chats2character -d whatsapp/chats --openai
+npx chats2character -d whatsapp/chats --claude
+
+The script will look for API keys in the following order:
+1. Command line argument if provided
+2. Environment variables (OPENAI_API_KEY or CLAUDE_API_KEY)
+3. Cached keys in ~/.eliza/.env
+4. Prompt for key if none found
+
+Example user info file (info.txt):
+The user is a mother of two, currently living in Madrid. She works as a high school teacher
+and has been teaching mathematics for over 15 years. She's very active in the school's
+parent association and often organizes educational events. In her free time, she enjoys
+gardening and cooking traditional Spanish recipes.
+
+The file should be a plain text file with descriptive information about the user. This
+information helps provide context to better understand and analyze the chat messages.
+
+The script will:
+1. Extract messages from the specified user
+2. Process content in chunks
+3. Generate a character profile
+4. Save results to character.json
+
+Note: WhatsApp chat exports should be in .txt format with standard WhatsApp export formatting:
+[timestamp] Username: message
+
+For usernames with spaces, make sure to use quotes:
+[timestamp] John Doe: message
+
 # License
 
 The license is the MIT license, with slight modifications so that users are not required to include the full license in their own software. See [LICENSE](LICENSE) for more details.
