@@ -37,7 +37,7 @@ Read the example character file and validate it against the JSON schema
 Read the example character file and print the contents
 [examples/example.mjs](examples/example.mjs)
 
-### JavScript Validation Example
+### JavaScript Validation Example
 Read the example character file and validate it against the JSON schema
 [examples/validate.mjs](examples/validate.mjs)
 
