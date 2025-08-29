@@ -1,6 +1,6 @@
 # Characterfile
 
-The goal of this project is to create a simple, easy-to-use format for generating and transmitting character files. You can use these character files out of the box with [Eliza](https://github.com/lalalune/eliza) or other LLM agents.
+The goal of this project is to create a simple, easy-to-use format for generating and transmitting character files. You can use these character files out of the box with [Eliza](https://github.com/elizaOS/eliza) or other LLM agents.
 
 ## Getting Started - Generate A Characterfile From Your Twitter
 
@@ -43,9 +43,9 @@ Read the example character file and validate it against the JSON schema
 
 # Scripts
 
-You can use the scripts to generate a character file from your tweets, convert a folder of documents into a knowledge file, and add knowledge to your character file.
+You can use the scripts to generate a character file from your tweets, convert web pages or a folder of documents into a knowledge file, and add knowledge to your character file.
 
-Most of these scripts require an OpenAI or Anthropic API key.
+Most of these scripts require an OpenAI or Anthropic API key. The web2folder script requires a FireCrawl API key.
 
 ## tweets2character
 
@@ -69,6 +69,27 @@ node scripts/tweets2character.js twitter-2024-07-22-aed6e84e05e7976f87480bc36686
 ```
 
 Note that the arguments are optional and will be prompted for if not provided.
+
+## web2folder
+
+Convert web pages into markdown files that can be processed by folder2knowledge.
+
+You can run web2folder directly from your command line with no downloads:
+
+```sh
+npx web2folder https://github.com/ai16z/eliza
+```
+
+Or after cloning the repo:
+
+```sh
+npm install
+node scripts/web2folder.js https://github.com/ai16z/eliza
+```
+
+Note: you will need a [FireCrawl API key](https://docs.firecrawl.dev/introduction) set in your environment as FIRECRAWL_API_KEY.
+
+The script will create a `web-content` directory with markdown files that you can then process using folder2knowledge.
 
 ## folder2knowledge
 
@@ -103,6 +124,66 @@ node scripts/knowledge2character.js path/to/character.character path/to/knowledg
 ```
 
 Note that the arguments are optional and will be prompted for if not provided.
+
+## Chat Export Processing
+
+Process WhatsApp chat exports to create character profiles.
+
+You can run chats2character directly from your command line with no downloads:
+
+npx chats2character -f path/to/chat.txt -u "Username"
+npx chats2character -d path/to/chats/dir -u "John Doe"
+
+Or if you have cloned the repo:
+
+npm install
+node scripts/chats2character.js -f path/to/chat.txt -u "Username"
+node scripts/chats2character.js -d path/to/chats/dir -u "John Doe"
+
+Options:
+-u, --user           Target username as it appears in chats (use quotes for names with spaces)
+-f, --file           Path to single chat export file
+-d, --dir            Path to directory containing chat files
+-i, --info           Path to JSON file containing additional user information
+-l, --list           List all users found in chats
+--openai [api_key]   Use OpenAI model (optionally provide API key)
+--claude [api_key]   Use Claude model (default, optionally provide API key)
+
+Examples:
+# Provide API key directly:
+npx chats2character -d whatsapp/chats --openai sk-...
+npx chats2character -d whatsapp/chats --claude sk-...
+
+# Use stored/cached API key:
+npx chats2character -d whatsapp/chats --openai
+npx chats2character -d whatsapp/chats --claude
+
+The script will look for API keys in the following order:
+1. Command line argument if provided
+2. Environment variables (OPENAI_API_KEY or CLAUDE_API_KEY)
+3. Cached keys in ~/.eliza/.env
+4. Prompt for key if none found
+
+Example user info file (info.txt):
+The user is a mother of two, currently living in Madrid. She works as a high school teacher
+and has been teaching mathematics for over 15 years. She's very active in the school's
+parent association and often organizes educational events. In her free time, she enjoys
+gardening and cooking traditional Spanish recipes.
+
+The file should be a plain text file with descriptive information about the user. This
+information helps provide context to better understand and analyze the chat messages.
+
+The script will:
+1. Extract messages from the specified user
+2. Process content in chunks
+3. Generate a character profile
+4. Save results to character.json
+
+Note: WhatsApp chat exports should be in .txt format with standard WhatsApp export formatting:
+[timestamp] Username: message
+
+For usernames with spaces, make sure to use quotes:
+[timestamp] John Doe: message
 
 # License
 

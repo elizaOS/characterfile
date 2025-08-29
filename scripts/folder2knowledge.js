@@ -88,8 +88,18 @@ const processDocument = async (filePath) => {
   } else {
     content = await fs.readFile(filePath, 'utf8');
   }
-  
-  return content;
+
+  // Split content into chunks
+  const chunkSize = 1000; // Example chunk size
+  const chunks = [];
+  for (let i = 0; i < content.length; i += chunkSize) {
+    chunks.push(content.substring(i, i + chunkSize));
+  }
+
+  return {
+    document: content,
+    chunks: chunks
+  };
 };
 
 // Asynchronous function to recursively find files and process them
