@@ -3,6 +3,39 @@
 import fs from 'fs';
 import inquirer from 'inquirer';
 
+const createBasicCharacterFile = async (filePath) => {
+  // See eliza types for reference: https://github.com/ai16z/eliza/blob/main/packages/core/src/core/types.ts
+  const basicCharacter = {
+    name: await promptUser('Enter character name:', 'New Character'),
+    description: await promptUser('Enter character description:', 'A new character'),
+    clients: [],
+    modelProvider: 'llama_local',
+    settings: {
+      secrets: {},
+      voice: {
+        model: 'en_US-male-medium',
+      },
+    },
+    traits: [],
+    background: '',
+    knowledge: {},
+    messageExamples: [],
+    postExamples: [],
+    topics: [],
+    style: {
+      all: [],
+      chat: [],
+      post: [],
+    },
+    adjectives: [],
+    nicknames: {},
+    phrases: {},
+  };
+
+  writeJsonFile(filePath, basicCharacter);
+  return basicCharacter;
+};
+
 const promptUser = async (question, defaultValue = '') => {
   console.log();
 
@@ -51,11 +84,18 @@ const main = async () => {
       knowledgeFilePath = await promptUser('Please provide the path to the knowledge JSON file:', 'knowledge.json');
     }
 
-    const character = readJsonFile(characterFilePath);
+    let character;
+    if (!fs.existsSync(characterFilePath)) {
+      console.log(`Character file not found. Let's create one!`);
+      character = await createBasicCharacterFile(characterFilePath);
+    } else {
+      character = readJsonFile(characterFilePath);
+    }
+
     const knowledge = readJsonFile(knowledgeFilePath);
 
-    if (!character || !knowledge) {
-      console.error('Invalid input files. Please provide valid JSON files for character and knowledge.');
+    if (!knowledge) {
+      console.error('Invalid knowledge file. Please provide a valid JSON file for knowledge.');
       return;
     }
 
