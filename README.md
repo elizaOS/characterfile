@@ -43,9 +43,9 @@ Read the example character file and validate it against the JSON schema
 
 # Scripts
 
-You can use the scripts the generate a character file from your tweets, convert a folder of documents into a knowledge file, and add knowledge to your character file.
+You can use the scripts to generate a character file from your tweets, convert web pages or a folder of documents into a knowledge file, and add knowledge to your character file.
 
-Most of these scripts require an OpenAI or Anthropic API key.
+Most of these scripts require an OpenAI or Anthropic API key. The web2folder script requires a FireCrawl API key.
 
 ## tweets2character
 
@@ -69,6 +69,27 @@ node scripts/tweets2character.js twitter-2024-07-22-aed6e84e05e7976f87480bc36686
 ```
 
 Note that the arguments are optional and will be prompted for if not provided.
+
+## web2folder
+
+Convert web pages into markdown files that can be processed by folder2knowledge.
+
+You can run web2folder directly from your command line with no downloads:
+
+```sh
+npx web2folder https://github.com/ai16z/eliza
+```
+
+Or after cloning the repo:
+
+```sh
+npm install
+node scripts/web2folder.js https://github.com/ai16z/eliza
+```
+
+Note: you will need a [FireCrawl API key](https://docs.firecrawl.dev/introduction) set in your environment as FIRECRAWL_API_KEY.
+
+The script will create a `web-content` directory with markdown files that you can then process using folder2knowledge.
 
 ## folder2knowledge
 
