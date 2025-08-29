@@ -9,7 +9,7 @@ import StreamZip from 'node-stream-zip';
 import os from 'os';
 import path from 'path';
 import util from 'util';
-import { prompt } from './prompt.js';
+import { prompt } from './prompts/prompt.js';
 
 dotenv.config();
 
@@ -50,7 +50,7 @@ const parseJsonFromMarkdown = (text) => {
 const promptUser = async (question, defaultValue = '') => {
   // Add a newline before the prompt
   console.log();
-  
+
   const { answer } = await inquirer.prompt([
     {
       type: 'input',
@@ -119,7 +119,7 @@ const runChatCompletion = async (messages, useGrammar = false, model) => {
       logError(`HTTP error! status: ${response.status}`, errorData);
       throw new Error(`Anthropic API request failed with status: ${response.status}`);
     }
-  
+
     const data = await response.json();
     const content = data.content[0].text;
     const parsed = parseJsonFromMarkdown(content) || JSON.parse(content);
@@ -152,6 +152,35 @@ const runChatCompletion = async (messages, useGrammar = false, model) => {
 
     if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content.trim();
+    const parsed = parseJsonFromMarkdown(content) || JSON.parse(content);
+    return parsed;
+  }
+  else if (model === 'openrouter') {
+    const modelName = 'deepseek/deepseek-r1';
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: modelName,
+        messages: messages,
+      }),
+    });
+
+    // check for 429
+    if (response.status === 429) {
+      await new Promise(resolve => setTimeout(resolve, 30000));
+      return runChatCompletion(messages, useGrammar, model);
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
@@ -337,7 +366,7 @@ const chunkText = async (tweets, accountData, archivePath) => {
   const CHUNK_SIZE = 60000; // 50k tokens approx
 
   const cacheDir = path.join(tmpDir, 'cache', path.basename(archivePath, '.zip'));
-  
+
   if (!fs.existsSync(cacheDir)) {
     fs.mkdirSync(cacheDir, { recursive: true });
   }
@@ -442,6 +471,7 @@ program
   .option('--openai <api_key>', 'OpenAI API key')
   .option('--claude <api_key>', 'Claude API key')
   .option('--grok <api_key>', 'Grok API key')
+  .option('--openrouter <api_key>', 'OpenRouter API key')
   .parse(process.argv);
 
 const limitConcurrency = async (tasks, concurrencyLimit) => {
@@ -488,10 +518,10 @@ const loadApiKey = (model) => {
 const getApiKey = async (model) => {
   const envKey = process.env[`${model.toUpperCase()}_API_KEY`];
   if (validateApiKey(envKey, model)) return envKey;
-  
+
   const cachedKey = loadApiKey(model);
   if (validateApiKey(cachedKey, model)) return cachedKey;
-  
+
   let newKey = '';
   while (!validateApiKey(newKey, model)) {
     newKey = await promptForApiKey(model);
@@ -502,13 +532,15 @@ const getApiKey = async (model) => {
 
 const validateApiKey = (apiKey, model) => {
   if (!apiKey) return false;
-  
+
   if (model === 'openai') {
     return apiKey.trim().startsWith('sk-');
   } else if (model === 'claude') {
     return apiKey.trim().length > 0;
   } else if (model === 'grok') {
     return apiKey.trim().startsWith('xai-');
+  } else if (model === 'openrouter') {
+    return apiKey.trim().startsWith('sk-');
   }
   return false;
 };
@@ -529,9 +561,9 @@ const resumeOrStartNewSession = async (projectCache, archivePath) => {
       clearGenerationCache(archivePath);
     }
   }
-  
+
   if (!projectCache.unfinishedSession) {
-    projectCache.model = await promptUser('Select model (openai/claude/grok): ');
+    projectCache.model = await promptUser('Select model (openai/claude/openrouter/grok): ');
     projectCache.basicUserInfo = await promptUser('Enter additional user info that might help the summarizer (real name, nicknames and handles, age, past employment vs current, etc): ');
     projectCache.unfinishedSession = {
       currentChunk: 0,
@@ -539,7 +571,7 @@ const resumeOrStartNewSession = async (projectCache, archivePath) => {
       completed: false
     };
   }
-  
+
   return projectCache;
 };
 
@@ -560,13 +592,13 @@ const saveCharacterData = (character) => {
 const main = async () => {
   try {
     let archivePath = program.args[0];
-    
+
     if (!archivePath) {
       archivePath = await promptUser('Please provide the path to your Twitter archive zip file:');
     }
 
     let projectCache = loadProjectCache(archivePath) || {};
-    
+
     projectCache = await resumeOrStartNewSession(projectCache, archivePath);
 
     const apiKey = await getApiKey(projectCache.model);
