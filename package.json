@@ -22,6 +22,7 @@
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.2",
+    "@google/genai": "^1.5.1",
     "@opendocsg/pdf2md": "^0.1.31",
     "adm-zip": "^0.5.16",
     "cli-progress": "^3.12.0",

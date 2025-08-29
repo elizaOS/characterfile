@@ -11,6 +11,7 @@ import OpenAI from 'openai';
 import { fileURLToPath } from 'url';
 import cliProgress from 'cli-progress';
 import chalk from 'chalk';
+import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
@@ -83,6 +84,7 @@ const main = async () => {
             .option('-l, --list', 'List all users found in chats')
             .option('--openai [api_key]', 'Use OpenAI model (optionally provide API key)')
             .option('--claude [api_key]', 'Use Claude model (optionally provide API key)')
+            .option('--google [api_key]', 'Use Google model (optionally provide API key)')
             .parse(process.argv);
 
         const options = program.opts();
@@ -124,20 +126,22 @@ const main = async () => {
          * Determines AI model to use and sets up API keys
          */
         let model;
-        if (options.openai || options.claude) {
-            model = options.openai ? 'openai' : 'claude';
+        if (options.openai || options.claude || options.google) {
+            model = options.openai ? 'openai' : options.claude ? 'claude' : 'google';
 
             if (options.openai && options.openai !== true) {
                 process.env.OPENAI_API_KEY = options.openai;
             } else if (options.claude && options.claude !== true) {
                 process.env.CLAUDE_API_KEY = options.claude;
+            } else if (options.google && options.google !== true) {
+                process.env.GOOGLE_API_KEY = options.google;
             }
         } else {
             const { selectedModel } = await inquirer.prompt([{
                 type: 'list',
                 name: 'selectedModel',
                 message: 'Select the model to use:',
-                choices: ['openai', 'claude'],
+                choices: ['openai', 'claude', 'google'],
                 default: 'openai'
             }]);
             model = selectedModel;
@@ -448,6 +452,21 @@ const runChatCompletion = async (messages, useGrammar = false, model) => {
         const data = await response.json();
         const content = data.content[0].text;
         return parseJsonFromMarkdown(content) || JSON.parse(content);
+    } else if (model === 'google') {
+        const jsonMessages = JSON.stringify(messages);
+        const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
+        const response = await ai.models.generateContent(
+            {
+                model: "gemini-2.0-flash",
+                contents: [{role: "user", parts: [{text: jsonMessages}]}],
+                config: {
+                    response_mime_type: "application/json"
+                }
+            }
+        );
+        console.log(response);
+        const content = response.candidates[0].content.parts[0].text;
+        return parseJsonFromMarkdown(content) || JSON.parse(content);
     }
 };
 
@@ -560,11 +579,11 @@ const extractMessagesFromFile = async (filePath, targetUser, dirs, skipSave = fa
             foundUsers.add(user.trim());
 
             // Skip media messages, deleted messages and message edits
-            if (message.includes('‎image omitted') ||
-                message.includes('‎sticker omitted') ||
-                message.includes('‎audio omitted') ||
-                message.includes('‎video omitted') ||
-                message.includes('‎document omitted') ||
+            if (message.includes('image omitted') ||
+                message.includes('sticker omitted') ||
+                message.includes('audio omitted') ||
+                message.includes('video omitted') ||
+                message.includes('document omitted') ||
                 message.includes('This message was deleted') ||
                 message.includes('This message was edited')) {
                 return;
