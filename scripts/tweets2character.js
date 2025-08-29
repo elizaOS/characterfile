@@ -124,6 +124,40 @@ const runChatCompletion = async (messages, useGrammar = false, model) => {
     const content = data.content[0].text;
     const parsed = parseJsonFromMarkdown(content) || JSON.parse(content);
     return parsed;
+  } else if(model === 'grok'){
+    const modelName = 'grok-beta';
+    const response = await fetch('https://api.x.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.GROK_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: modelName,
+          temperature: 0,
+          stream: false,
+          messages: [
+                {
+                role: "user",
+                content: messages[0].content
+                }
+            ],
+            }),
+        });
+
+    if (response.status === 429) {
+        await new Promise(resolve => setTimeout(resolve, 30000));
+        return runChatCompletion(messages, useGrammar, model);
+    }
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content.trim();
+    const parsed = parseJsonFromMarkdown(content) || JSON.parse(content);
+    return parsed;
   }
   else if (model === 'openrouter') {
     const modelName = 'deepseek/deepseek-r1';
@@ -436,6 +470,7 @@ process.on('unhandledRejection', (reason, promise) => {
 program
   .option('--openai <api_key>', 'OpenAI API key')
   .option('--claude <api_key>', 'Claude API key')
+  .option('--grok <api_key>', 'Grok API key')
   .option('--openrouter <api_key>', 'OpenRouter API key')
   .parse(process.argv);
 
@@ -502,6 +537,8 @@ const validateApiKey = (apiKey, model) => {
     return apiKey.trim().startsWith('sk-');
   } else if (model === 'claude') {
     return apiKey.trim().length > 0;
+  } else if (model === 'grok') {
+    return apiKey.trim().startsWith('xai-');
   } else if (model === 'openrouter') {
     return apiKey.trim().startsWith('sk-');
   }
@@ -526,7 +563,7 @@ const resumeOrStartNewSession = async (projectCache, archivePath) => {
   }
 
   if (!projectCache.unfinishedSession) {
-    projectCache.model = await promptUser('Select model (openai/claude/openrouter): ');
+    projectCache.model = await promptUser('Select model (openai/claude/openrouter/grok): ');
     projectCache.basicUserInfo = await promptUser('Enter additional user info that might help the summarizer (real name, nicknames and handles, age, past employment vs current, etc): ');
     projectCache.unfinishedSession = {
       currentChunk: 0,
